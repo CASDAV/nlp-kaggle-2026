@@ -1,7 +1,9 @@
+# Configuración compartida por ambos proyectos (cada uno tiene ruff en su grupo dev).
 line-length = 110
-target-version = "py312"
+target-version = "py311"
 extend-include = ["*.ipynb"]
 
 [lint]
 select = ["E", "F", "W", "I", "B", "UP"]
+# Notebooks: permitir líneas largas e imports fuera del inicio de celda.
 ignore = ["E501", "E402"]

@@ -1,16 +1,23 @@
 [project]
 name = "tweetage"
 version = "0.1.0"
-requires-python = ">=3.12"
+description = "TweetAge (Kaggle tweet-age-2026-puj): predicción de rango de edad con modelos de lenguaje propios (n-gramas), sin vectorización ni modelos preentrenados."
+requires-python = ">=3.11"
+# Regla de la competencia: NO agregar transformers, gensim, embeddings, TF-IDF ni modelos preentrenados.
+# scikit-learn se usa solo para particiones (StratifiedGroupKFold) y métricas (F1, accuracy).
 dependencies = [
-    "numpy>=2.5.4",
+    "numpy>=2.1",
     "pandas>=3",
-    "scikit-learn>=1.9.1",
+    "scikit-learn>=1.5",
 ]
 
 [dependency-groups]
 dev = [
-    "ipykernel>=7.4.0",
-    "nbstripout>=0.9.1",
-    "ruff>=0.17.0",
+    "ipykernel>=6.29",
+    "nbstripout>=0.8",
+    "ruff>=0.7",
 ]
+
+[build-system]
+requires = ["uv_build>=0.9,<0.12"]
+build-backend = "uv_build"
