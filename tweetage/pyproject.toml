@@ -1,0 +1,16 @@
+[project]
+name = "tweetage"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.5.4",
+    "pandas>=3",
+    "scikit-learn>=1.9.1",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+    "nbstripout>=0.9.1",
+    "ruff>=0.17.0",
+]
