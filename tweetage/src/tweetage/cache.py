@@ -19,8 +19,6 @@ from pathlib import Path
 import numpy as np
 
 from tweetage import pipeline as P
-
-# reemplaza la línea de CACHE_DIR por estas dos
 from tweetage.paths import work_dir
 
 CACHE_DIR = Path(os.environ.get("TWEETAGE_CACHE", work_dir() / "cache"))
@@ -44,9 +42,7 @@ def channel(name, X_train, y_train, X_eval, tag="", channels=None, enabled=True)
     if not enabled:
         return P.channel_probs(name, X_train, y_train, X_eval, channels)
     cls, kwargs, temperature = channels[name]
-    config = json.dumps(
-        {"cls": cls.__name__, "kwargs": kwargs, "t": temperature}, sort_keys=True, default=str
-    )
+    config = json.dumps({"cls": cls.__name__, "kwargs": kwargs, "t": temperature}, sort_keys=True, default=str)
     key = _fingerprint(config, X_train, y_train, X_eval)
     path = CACHE_DIR / f"{name}__{tag or 'notag'}__{key}.npy"
     if path.exists():

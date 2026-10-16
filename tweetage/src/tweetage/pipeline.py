@@ -63,17 +63,32 @@ def all_channel_probs(X_train, y_train, X_eval, names=None, n_jobs=1, channels=C
         return dict(ex.map(_channel_task, tasks))
 
 
+def blend_steps(p: dict, mention_mask: np.ndarray) -> dict:
+    """Mezcla vigente paso a paso, en el orden en que se fue construyendo.
+
+    Devuelve un dict nombre_del_paso -> probabilidades; cada paso agrega un canal al
+    anterior. El último ("word_seq3") es la mezcla final de la submission 0.60021.
+    """
+    steps = {}
+    steps["char_mix"] = 0.216 * p["word1"] + 0.144 * p["char4"] + 0.240 * p["char5"] + 0.400 * p["char6"]
+    steps["hashtags"] = (0.36 * steps["char_mix"] + 0.40 * p["hashtags"]) / 0.76
+    mentions_t = M.softmax(np.log(np.clip(p["mentions"], 1e-12, 1.0)) / 0.35)
+    steps["mentions"] = 0.70 * steps["hashtags"] + 0.30 * mentions_t
+    steps["position"] = 0.90 * steps["mentions"] + 0.10 * p["position"]
+    out = steps["position"].copy()
+    out[mention_mask] = 0.70 * out[mention_mask] + 0.30 * p["mention_pos"][mention_mask]
+    steps["mention_pos"] = out
+    steps["char_seq2"] = 0.85 * steps["mention_pos"] + 0.15 * p["char_seq2"]
+    steps["word_seq3"] = (1 - WORD_SEQ_WEIGHT) * steps["char_seq2"] + WORD_SEQ_WEIGHT * p["word_seq3"]
+    return steps
+
+
+WORD_SEQ_WEIGHT = 0.20
+
+
 def blend(p: dict, mention_mask: np.ndarray) -> np.ndarray:
     """Mezcla vigente. ``p`` mapea nombre de canal -> probabilidades."""
-    char_mix = 0.216 * p["word1"] + 0.144 * p["char4"] + 0.240 * p["char5"] + 0.400 * p["char6"]
-    mentions_t = M.softmax(np.log(np.clip(p["mentions"], 1e-12, 1.0)) / 0.35)
-    no_mentions = (0.36 * char_mix + 0.40 * p["hashtags"]) / 0.76
-    previous = 0.70 * no_mentions + 0.30 * mentions_t
-    base = 0.90 * previous + 0.10 * p["position"]
-    out = base.copy()
-    out[mention_mask] = 0.70 * base[mention_mask] + 0.30 * p["mention_pos"][mention_mask]
-    out = 0.85 * out + 0.15 * p["char_seq2"]
-    return 0.80 * out + 0.20 * p["word_seq3"]
+    return blend_steps(p, mention_mask)["word_seq3"]
 
 
 def predict(p: dict, mention_mask: np.ndarray) -> np.ndarray:

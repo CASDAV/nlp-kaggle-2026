@@ -1,8 +1,11 @@
-"""Registro incremental de experimentos: un CSV al que solo se agregan filas."""
+"""Registro incremental de experimentos: un CSV con una fila por experimento.
+
+Si se vuelve a registrar un experimento con el mismo nombre y semilla (por ejemplo al
+re-ejecutar el notebook), se actualiza su fila en lugar de duplicarla.
+"""
 
 from __future__ import annotations
 
-import csv
 import json
 from datetime import datetime
 
@@ -17,41 +20,48 @@ def _path():
     return work_dir() / "experiments" / "registry.csv"
 
 
-def log(nombre, config, seed, f1_macro, accuracy, notas="", kaggle_public=""):
-    """Agrega un experimento y devuelve su id."""
+def _read() -> pd.DataFrame:
     path = _path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    nuevo = not path.exists()
-    next_id = 1 if nuevo else len(pd.read_csv(path)) + 1
-    with path.open("a", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, FIELDS)
-        if nuevo:
-            w.writeheader()
-        w.writerow(
-            {
-                "id": next_id,
-                "fecha": datetime.now().isoformat(timespec="seconds"),
-                "nombre": nombre,
-                "config": json.dumps(config, sort_keys=True, default=str),
-                "seed": seed,
-                "f1_macro": round(float(f1_macro), 5),
-                "accuracy": round(float(accuracy), 5),
-                "kaggle_public": kaggle_public,
-                "notas": notas,
-            }
-        )
-    return next_id
+    if not path.exists():
+        return pd.DataFrame(columns=FIELDS)
+    return pd.read_csv(path, dtype={"nombre": str, "notas": str, "config": str})
+
+
+def log(nombre, config, seed, f1_macro, accuracy, notas="", kaggle_public=None):
+    """Agrega (o actualiza, si ya existe nombre+seed) un experimento y devuelve su id."""
+    df = _read()
+    row = {
+        "fecha": datetime.now().isoformat(timespec="seconds"),
+        "nombre": nombre,
+        "config": json.dumps(config, sort_keys=True, default=str, ensure_ascii=False),
+        "seed": seed,
+        "f1_macro": round(float(f1_macro), 5),
+        "accuracy": round(float(accuracy), 5),
+        "notas": notas,
+    }
+    same = (df["nombre"] == nombre) & (df["seed"].astype(str) == str(seed))
+    if same.any():
+        i = df.index[same][0]
+        for key, value in row.items():
+            df.loc[i, key] = value
+        if kaggle_public is not None:
+            df.loc[i, "kaggle_public"] = kaggle_public
+        exp_id = int(df.loc[i, "id"])
+    else:
+        exp_id = 1 if df.empty else int(df["id"].max()) + 1
+        new = pd.DataFrame([{**row, "id": exp_id, "kaggle_public": kaggle_public}])
+        df = new if df.empty else pd.concat([df, new], ignore_index=True)
+    _path().parent.mkdir(parents=True, exist_ok=True)
+    df[FIELDS].to_csv(_path(), index=False)
+    return exp_id
 
 
 def set_kaggle_score(exp_id, score):
     """Anota el score público de Kaggle en un experimento ya registrado."""
-    df = pd.read_csv(_path())
+    df = _read()
     df.loc[df["id"] == exp_id, "kaggle_public"] = score
-    df.to_csv(_path(), index=False)
+    df[FIELDS].to_csv(_path(), index=False)
 
 
-def show(sort="f1_macro", ascending=False):
-    path = _path()
-    if not path.exists():
-        return pd.DataFrame(columns=FIELDS)
-    return pd.read_csv(path).sort_values(sort, ascending=ascending).reset_index(drop=True)
+def show(sort="id", ascending=True):
+    return _read().sort_values(sort, ascending=ascending).reset_index(drop=True)

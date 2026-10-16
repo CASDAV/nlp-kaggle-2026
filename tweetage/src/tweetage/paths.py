@@ -50,9 +50,7 @@ def data_dir() -> Path:
             hits = sorted(Path("/kaggle/input").rglob(name))
             if hits:
                 return hits[0].parent
-        raise FileNotFoundError(
-            "No se encontró el train en /kaggle/input; agrega los datos de la competencia"
-        )
+        raise FileNotFoundError("No se encontró el train en /kaggle/input; agrega los datos de la competencia")
     if env == "colab":
         return Path("/content/data")
     return project_root() / "data" / "raw"
@@ -80,3 +78,16 @@ def load_data():
 def texts(df: pd.DataFrame) -> list[str]:
     """Textos listos para los modelos: nulos -> "", sin espacios en los extremos."""
     return df["text"].fillna("").astype(str).str.strip().tolist()
+
+
+def save_submission(test: pd.DataFrame, predictions, exp_id: int, nombre: str) -> Path:
+    """Guarda el CSV de envío (id, age_range) con validaciones básicas."""
+    sub = pd.DataFrame({"id": test["id"], "age_range": predictions})
+    assert len(sub) == len(test) and sub["id"].is_unique and sub["age_range"].notna().all()
+    if environment() == "kaggle":
+        path = work_dir() / "submission.csv"
+    else:
+        path = work_dir() / "submissions" / f"{exp_id:03d}_{nombre}.csv"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sub.to_csv(path, index=False, encoding="utf-8")
+    return path
