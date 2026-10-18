@@ -1,0 +1,71 @@
+{
+  "flags": {
+    "unescape": true,
+    "tweet_tok": true,
+    "clean": false,
+    "template": false
+  },
+  "channels": [
+    "word1",
+    "char4",
+    "char5",
+    "char6",
+    "mentions",
+    "hashtags",
+    "position",
+    "mention_pos",
+    "char_seq2",
+    "word_seq3",
+    "shape5",
+    "shape7",
+    "char_seq4"
+  ],
+  "blend": {
+    "kind": "loglinear",
+    "names": [
+      "word1",
+      "char4",
+      "char5",
+      "char6",
+      "mentions",
+      "hashtags",
+      "position",
+      "mention_pos",
+      "char_seq2",
+      "word_seq3",
+      "shape5",
+      "shape7",
+      "char_seq4"
+    ],
+    "gate_spec": {
+      "mention_pos": "mention"
+    },
+    "weights": {
+      "word1": 0.031161018737359367,
+      "char4": 0.010898387743373608,
+      "char5": 0.009033985414495991,
+      "char6": 0.009106407379537499,
+      "mentions": 0.25425953197193074,
+      "hashtags": 0.32646146790398833,
+      "position": 0.055923143724038685,
+      "mention_pos": 0.16201424753578006,
+      "char_seq2": 0.09109238587163576,
+      "word_seq3": 0.16313856108383012,
+      "shape5": 0.025803190977985266,
+      "shape7": 0.02184762825090826,
+      "char_seq4": 0.8549992143509847
+    }
+  },
+  "specialist": null,
+  "bias": [
+    -0.15833333333333333,
+    0.14166666666666666,
+    0.14166666666666666,
+    0.14166666666666666,
+    0.04166666666666663,
+    -0.3083333333333333
+  ],
+  "f1_confirmacion": 0.586827548761723,
+  "delta_confirmacion": -4.2872768450608056e-05,
+  "experimento": "FINAL_3_sesgos"
+}

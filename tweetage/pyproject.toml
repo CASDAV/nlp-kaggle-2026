@@ -6,15 +6,18 @@ requires-python = ">=3.11"
 # Regla de la competencia: NO agregar transformers, gensim, embeddings, TF-IDF ni modelos preentrenados.
 # scikit-learn se usa solo para particiones (StratifiedGroupKFold) y métricas (F1, accuracy).
 dependencies = [
+    "matplotlib>=3.11.2",
     "numpy>=2.1",
     "pandas>=3",
     "scikit-learn>=1.5",
+    "scipy>=1.17.1",
 ]
 
 [dependency-groups]
 dev = [
     "ipykernel>=6.29",
     "nbstripout>=0.8",
+    "nltk>=3.10.3",
     "ruff>=0.7",
 ]
 

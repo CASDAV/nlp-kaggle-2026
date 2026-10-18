@@ -1,0 +1,62 @@
+{
+  "flags": {
+    "unescape": false,
+    "tweet_tok": false,
+    "clean": false,
+    "template": false
+  },
+  "channels": [
+    "word1",
+    "char4",
+    "char5",
+    "char6",
+    "mentions",
+    "hashtags",
+    "position",
+    "mention_pos",
+    "char_seq2",
+    "word_seq3"
+  ],
+  "blend": {
+    "kind": "loglinear",
+    "names": [
+      "word1",
+      "char4",
+      "char5",
+      "char6",
+      "mentions",
+      "hashtags",
+      "position",
+      "mention_pos",
+      "char_seq2",
+      "word_seq3"
+    ],
+    "gate_spec": {
+      "mention_pos": "mention"
+    },
+    "weights": {
+      "word1": 0.032839315904228596,
+      "char4": 0.012395981011065206,
+      "char5": 0.010810280672838906,
+      "char6": 0.010900645670393698,
+      "mentions": 0.26165735832302445,
+      "hashtags": 0.3326744599020245,
+      "position": 0.057261577830543066,
+      "mention_pos": 0.16454330644248777,
+      "char_seq2": 0.10535378886824542,
+      "word_seq3": 0.18628681987818504
+    }
+  },
+  "specialist": null,
+  "bias": [
+    -0.08333333333333333,
+    0.11666666666666668,
+    0.06666666666666664,
+    0.06666666666666664,
+    -0.03333333333333334,
+    -0.1333333333333333
+  ],
+  "f1_confirmacion": 0.5865909586729051,
+  "delta_confirmacion": -0.00027946285726854203,
+  "experimento": "B4_loglineal+sesgos"
+}

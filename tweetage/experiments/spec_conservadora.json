@@ -1,0 +1,35 @@
+{
+  "flags": {
+    "unescape": false,
+    "tweet_tok": false,
+    "clean": false,
+    "template": false
+  },
+  "channels": [
+    "word1",
+    "char4",
+    "char5",
+    "char6",
+    "mentions",
+    "hashtags",
+    "position",
+    "mention_pos",
+    "char_seq2",
+    "word_seq3"
+  ],
+  "blend": {
+    "kind": "pipeline_v1"
+  },
+  "specialist": null,
+  "bias": [
+    -0.09999999999999999,
+    0.10000000000000002,
+    0.10000000000000002,
+    0.10000000000000002,
+    -0.14999999999999997,
+    -0.05
+  ],
+  "f1_confirmacion": 0.586680230582016,
+  "delta_confirmacion": -0.00019019094815764248,
+  "experimento": "B1_sesgos"
+}
