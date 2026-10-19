@@ -8,3 +8,6 @@ __pycache__/
 .idea/
 */cache/
 */cache/
+**/cache/
+**/submission*.csv
+tweetage/reports/*_ejemplos.csv
