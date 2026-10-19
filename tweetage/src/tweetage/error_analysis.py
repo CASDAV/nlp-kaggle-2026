@@ -568,3 +568,387 @@ def culpables(votos: pd.DataFrame, err: np.ndarray, mask: np.ndarray, nombres=("
     m = np.asarray(mask)[err]
     return pd.DataFrame({nombres[0]: 100 * cul[~m].value_counts(normalize=True),
                          nombres[1]: 100 * cul[m].value_counts(normalize=True)}).fillna(0).sort_values(nombres[1], ascending=False)
+
+
+# =============================================================================
+# Modelo final greedy_kn (Kneser-Ney) frente a greedy_ent — sección 8 del 03
+# =============================================================================
+#
+# Igual que lo anterior, no entrena nada: ``faltantes_en_cache`` revisa primero qué
+# canales no están en disco y ``cargar_spec`` se niega a seguir si falta alguno
+# (salvo ``entrenar=True``). Cada KN de orden 7 usa ~2.6 GB por proceso.
+
+import json  # noqa: E402
+from dataclasses import field  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+REF_KN = "greedy_ent"  # modelo de referencia para la sección 8
+
+
+@dataclass
+class ModelosKN(Modelos):
+    """``Modelos`` con un segundo modelo de referencia.
+
+    ``spec`` / ``p_greedy`` = modelo analizado (greedy_kn); ``spec_ref`` / ``p_ref`` =
+    referencia (greedy_ent); ``p_vig`` = mezcla vigente.
+    """
+
+    spec_ref: dict = field(default_factory=dict)
+    p_ref: np.ndarray | None = None
+    nombre: str = "greedy_kn"
+    nombre_ref: str = REF_KN
+
+
+def _nombres_carga(spec, spec_ref) -> tuple[list, list]:
+    """Canales de la variante base (etiqueta seed{s}) y lógicos de palabras con TweetTokenizer."""
+    extra = [c for s in (spec, spec_ref) for c in XV.spec_channels(s) if c not in CX.BASE_NAMES]
+    extra += ["word_seq3_ent5", "char_seq4", "char6_cs"]  # ablaciones (sin TT / reversiones)
+    return CX.BASE_NAMES + list(dict.fromkeys(extra)), list(WORD_TT)
+
+
+def faltantes_en_cache(X, y, seed, spec, spec_ref=None) -> list[str]:
+    """Canales que ``cargar_spec`` tendría que entrenar. No entrena nada.
+
+    Reproduce las rutas de ``XV.run_seed``: variante base con etiqueta ``seed{s}`` y
+    variante A2 (``seed{s}_A2_tweettok``) para los 4 canales de palabras.
+    """
+    base_names, tt_names = _nombres_carga(spec, spec_ref or spec)
+    Xtr, ytr, Xva, _ = validation.split(X, y, seed)
+    faltan = []
+    for vname, names in (("base", base_names), ("A2_tweettok", tt_names)):
+        flags = CX.VARIANTS[vname]
+        tag = f"seed{seed}" if vname == "base" else f"seed{seed}_{vname}"
+        Xtr_v, ytr_v = XV.apply_variant_train(Xtr, ytr, flags)
+        Xva_v = XV.apply_variant_eval(Xva, flags)
+        for real in CX.resolve(names, flags).values():
+            if not CX.cache_path(real, Xtr_v, ytr_v, Xva_v, tag).exists():
+                faltan.append(f"{real} [{tag}]")
+    return list(dict.fromkeys(faltan))
+
+
+def cargar_spec(X, y, seed=SEED_CONFIRMACION, spec_name="greedy_kn", ref=REF_KN, n_jobs=2, entrenar=False) -> ModelosKN:
+    """Carga de la caché los canales de ``spec_name`` y de ``ref`` (y la mezcla vigente).
+
+    Si falta algún canal en caché lanza ``RuntimeError`` con la lista, salvo ``entrenar=True``.
+    """
+    spec, spec_ref = XV.load_spec(spec_name), XV.load_spec(ref)
+    faltan = faltantes_en_cache(X, y, seed, spec, spec_ref)
+    if faltan and not entrenar:
+        raise RuntimeError(
+            "Faltan en caché (no se entrena nada): " + ", ".join(faltan)
+            + ". Cada KN de orden 7 usa ~2.6 GB por proceso; para calcularlos pasar entrenar=True."
+        )
+    base_names, tt_names = _nombres_carga(spec, spec_ref)
+    base = XV.run_seed(X, y, seed, CX.VARIANTS["base"], base_names, n_jobs)
+    tt = XV.run_seed(X, y, seed, CX.VARIANTS["A2_tweettok"], tt_names, n_jobs)
+    Xtr, ytr, Xva, _ = validation.split(X, y, seed)
+    m = ModelosKN(seed, spec, Xtr, ytr, Xva, base.y_idx, base.masks, base.probs, tt.probs,
+                  spec_ref=spec_ref, nombre=spec_name, nombre_ref=ref)
+    m.p_vig = P.blend(base.probs, base.masks["mention"])
+    m.p_greedy = m.predict(spec)
+    m.p_ref = m.predict(spec_ref)
+    return m
+
+
+def verificar_spec(m: ModelosKN, tol=2e-4) -> pd.DataFrame:
+    """F1 recalculado frente al guardado en la spec (``f1_confirmacion``)."""
+    filas = []
+    for nombre, spec, p in ((m.nombre_ref, m.spec_ref, m.p_ref), (m.nombre, m.spec, m.p_greedy)):
+        esperado = spec.get("f1_confirmacion") if m.seed == SEED_CONFIRMACION else None
+        f1 = E.f1_macro(m.y_idx, p)
+        filas.append({"modelo": nombre, "f1_macro": f1, "f1_guardado_en_spec": esperado,
+                      "coincide": None if esperado is None else abs(f1 - esperado) < tol})
+    return pd.DataFrame(filas).set_index("modelo")
+
+
+def pesos_efectivos(spec) -> pd.Series:
+    """Peso final de la mezcla base y de cada canal agregado: (1 − w)·mezcla + w·canal, en orden."""
+    pesos = {"mezcla base (greedy_ent sin agregados)": 1.0}
+    for a in spec.get("adds") or []:
+        pesos = {k: v * (1 - a["weight"]) for k, v in pesos.items()}
+        pesos[f"{a['name']} (T={a['temperature']})"] = a["weight"]
+    return pd.Series(pesos, name="peso efectivo")
+
+
+# ---------------------------------------------------------------- grupos del informe
+
+GRUPOS_INFORME = {
+    "longitud 0-30": None,
+    "sin texto propio": "sin texto propio",
+    "plantilla frecuente en train": "plantilla frecuente en train",
+    "RT": "RT",
+    "respuesta (mención al inicio)": "mención al inicio",
+    "con hashtag": "con hashtag",
+    "con URL": "con URL",
+}
+
+
+def grupos_informe(tipos: pd.DataFrame, long: pd.Series) -> dict:
+    """Los 7 tipos de tweet del informe (+ "todos"). Un tweet puede estar en varios."""
+    out = {"todos": np.ones(len(tipos), dtype=bool)}
+    for etiqueta, col in GRUPOS_INFORME.items():
+        out[etiqueta] = (long == "0-30").to_numpy() if col is None else tipos[col].to_numpy()
+    return out
+
+
+def etiqueta_tipo(tipos: pd.DataFrame, long: pd.Series, i) -> str:
+    """Descripción corta del tipo de un tweet (para la tabla de ejemplos)."""
+    cortos = {"RT": "RT", "mención al inicio": "respuesta", "con URL": "URL", "con hashtag": "hashtag",
+              "sin texto propio": "sin texto", "plantilla frecuente en train": "plantilla"}
+    partes = [c for col, c in cortos.items() if tipos[col].iat[i]]
+    return ", ".join(partes + [f"{long.iat[i]} car."])
+
+
+# ---------------------------------------------------------------- resúmenes numéricos
+
+
+def resumen_ordinal(y_idx, p, tipos: pd.DataFrame, long: pd.Series):
+    """(dict de cifras, tabla de concentración de los errores a distancia ≥ 3 por tipo de tweet).
+
+    ``lift`` = % del grupo dentro de los errores lejanos / % del grupo en todos los tweets
+    (> 1: el grupo está sobrerrepresentado en los errores graves).
+    """
+    d = np.abs(E.as_pred(p) - y_idx)
+    err, lejos = d > 0, d >= 3
+    cifras = {
+        "% de tweets mal clasificados": 100 * err.mean(),
+        "% de errores en la clase vecina": 100 * (d[err] == 1).mean(),
+        "% de errores a distancia <= 2": 100 * (d[err] <= 2).mean(),
+        "% de tweets con error >= 3": 100 * lejos.mean(),
+        "distancia media de los errores": float(d[err].mean()),
+    }
+    g = {k: v for k, v in grupos_informe(tipos, long).items() if k != "todos"}
+    filas = {}
+    for nombre, mask in g.items():
+        en_lejos, en_todos = 100 * mask[lejos].mean(), 100 * mask.mean()
+        filas[nombre] = {"% en errores >= 3": en_lejos, "% en todos los tweets": en_todos,
+                         "lift": en_lejos / en_todos if en_todos else np.nan,
+                         "% del grupo con error >= 3": 100 * lejos[mask].mean() if mask.any() else np.nan}
+    return cifras, pd.DataFrame(filas).T.sort_values("lift", ascending=False)
+
+
+def resumen_confianza(y_idx, p, n_bins=5) -> dict:
+    """Accuracy por quintil de margen, % de errores en los 2 quintiles más dudosos y ECE."""
+    t = tabla_confianza(y_idx, p, n_bins)
+    _, ece = calibracion(y_idx, p)
+    return {"accuracy por quintil": t["accuracy"].to_dict(),
+            "% de errores en Q1+Q2": float(t["% de los errores"].iloc[:2].sum()),
+            "ECE": ece, "tabla": t}
+
+
+# ---------------------------------------------------------------- ablación KN
+
+
+def variantes_kn(spec, spec_ref) -> dict:
+    """Specs que deshacen, una a la vez, cada movimiento KN (con los valores de ``spec_ref``)."""
+    import copy
+
+    adds = list(spec.get("adds") or [])
+    adds_ref = {a["name"]: a for a in spec_ref.get("adds") or []}
+    out = {}
+
+    s = copy.deepcopy(spec)
+    s["adds"] = [a for a in adds if a["name"] != "kn_char6"]
+    out["quitar kn_char6 (agregado)"] = s
+
+    s = copy.deepcopy(spec)
+    s["adds"] = [dict(adds_ref["char_seq4"]) if a["name"] == "kn_char7_cs" else a for a in adds]
+    out["kn_char7_cs → char_seq4 (agregado)"] = s
+
+    s = copy.deepcopy(spec)
+    s["swaps"] = {**s["swaps"], "char6": (spec_ref.get("swaps") or {}).get("char6", "char6")}
+    temps = {k: v for k, v in (s.get("swap_temps") or {}).items() if k != "char6"}
+    temps.update({k: v for k, v in (spec_ref.get("swap_temps") or {}).items() if k == "char6"})
+    s["swap_temps"] = temps
+    out["kn_char6_cs → char6_cs (reemplazo)"] = s
+
+    out["revertir todo (= greedy_ent)"] = copy.deepcopy(spec_ref)
+    return out
+
+
+def ablacion_kn(m: ModelosKN, n_boot=1000) -> pd.DataFrame:
+    """ΔF1 = F1(greedy_kn) − F1(sin el movimiento), con IC bootstrap pareado al 95 %."""
+    f_kn = E.f1_macro(m.y_idx, m.p_greedy)
+    filas = {}
+    for nombre, s in variantes_kn(m.spec, m.spec_ref).items():
+        q = m.predict(s)
+        lo, hi = E.paired_bootstrap(m.y_idx, q, m.p_greedy, n_boot=n_boot)
+        f = E.f1_macro(m.y_idx, q)
+        filas[nombre] = {"F1 sin": f, "ΔF1 (aporte)": f_kn - f, "ic95 bajo": lo, "ic95 alto": hi,
+                         "% predicciones que cambian": 100 * np.mean(E.as_pred(q) != E.as_pred(m.p_greedy))}
+    return pd.DataFrame(filas).T
+
+
+def plot_ablacion_kn(df: pd.DataFrame, nombre="greedy_kn"):
+    import matplotlib.pyplot as plt
+
+    d = df.sort_values("ΔF1 (aporte)")
+    fig, ax = plt.subplots(figsize=(7, 0.45 * len(d) + 1.2))
+    y = np.arange(len(d))
+    ax.barh(y, d["ΔF1 (aporte)"], height=0.55, color="#4C72B0")
+    err = np.vstack([d["ΔF1 (aporte)"] - d["ic95 bajo"], d["ic95 alto"] - d["ΔF1 (aporte)"]])
+    ax.errorbar(d["ΔF1 (aporte)"], y, xerr=np.abs(err), fmt="none", ecolor="black", lw=0.8, capsize=3)
+    for yi, v in zip(y, d["ΔF1 (aporte)"]):
+        ax.text(v, yi + 0.32, f"{v:+.4f}", ha="center", fontsize=8)
+    ax.axvline(0, color="gray", lw=1)
+    ax.set_yticks(y, d.index, fontsize=8)
+    ax.set_xlabel("aporte al F1 macro (F1 con − F1 sin), semilla de confirmación")
+    ax.set_title(f"¿Cuánto pierde {nombre} si se deshace cada movimiento KN?")
+    fig.tight_layout()
+    return fig
+
+
+# ---------------------------------------------------------------- ejemplos para el informe
+
+CATEGORIAS_EJEMPLO = [
+    "clase vecina central (18-24 ↔ 25-34)",
+    "RT de una cuenta de otra edad",
+    "plantilla / sin texto propio",
+    "error con confianza alta (≥ 0.60)",
+    "error lejano (distancia ≥ 3)",
+    "tweet corto (≤ 30 caracteres)",
+]
+_RX_RT = re.compile(r"^RT @(\w+)")
+
+
+def _clase_mayoritaria_rt(X_tr, y_tr, min_n=5) -> dict:
+    """Cuenta retuiteada -> clase más frecuente de quienes la retuitean en train (≥ ``min_n`` RT)."""
+    por_cuenta: dict = {}
+    for t, c in zip(X_tr, y_tr):
+        mt = _RX_RT.match(t)
+        if mt:
+            por_cuenta.setdefault(mt.group(1).casefold(), Counter())[c] += 1
+    return {u: cnt.most_common(1)[0][0] for u, cnt in por_cuenta.items() if sum(cnt.values()) >= min_n}
+
+
+def mascaras_ejemplo(m: ModelosKN, tipos: pd.DataFrame, long: pd.Series, umbral_conf=0.60) -> dict:
+    """Una máscara por categoría (solo errores de greedy_kn con texto no vacío)."""
+    y, p = m.y_idx, m.p_greedy
+    pred = E.as_pred(p)
+    base = (pred != y) & np.array([bool(t.strip()) for t in m.X_va])
+    i18, i25 = CLASES.index("18-24"), CLASES.index("25-34")
+    mayoritaria = _clase_mayoritaria_rt(m.X_tr, m.y_tr)
+    cl = np.asarray(CLASES)
+    rt_otra = np.zeros(len(y), dtype=bool)
+    for i, t in enumerate(m.X_va):
+        mt = _RX_RT.match(t)
+        if mt and base[i]:
+            c = mayoritaria.get(mt.group(1).casefold())
+            rt_otra[i] = c is not None and c == cl[pred[i]]
+    sin_texto = tipos["sin texto propio"].to_numpy()
+    return {
+        CATEGORIAS_EJEMPLO[0]: base & (((y == i18) & (pred == i25)) | ((y == i25) & (pred == i18))),
+        CATEGORIAS_EJEMPLO[1]: rt_otra,
+        CATEGORIAS_EJEMPLO[2]: base & (sin_texto | tipos["plantilla frecuente en train"].to_numpy()),
+        CATEGORIAS_EJEMPLO[3]: base & (p.max(axis=1) >= umbral_conf),
+        CATEGORIAS_EJEMPLO[4]: base & (np.abs(pred - y) >= 3),
+        CATEGORIAS_EJEMPLO[5]: base & (long == "0-30").to_numpy() & ~sin_texto,
+    }
+
+
+def _recortar(t, n=120):
+    t = re.sub(r"\s+", " ", t.strip())
+    return t if len(t) <= n else t[: n - 1].rstrip() + "…"
+
+
+def seleccionar_ejemplos(m: ModelosKN, votos: pd.DataFrame, tipos: pd.DataFrame, long: pd.Series,
+                         seed=SEED_CONFIRMACION, elegidos: dict | None = None) -> pd.DataFrame:
+    """Un error real por categoría, sorteado con semilla fija y sin repetir tweets.
+
+    ``elegidos`` = {categoría: fila de validación} permite fijar a mano alguno.
+    Canal culpable = el que más empujó hacia la clase predicha (voto más negativo).
+    """
+    mascaras = mascaras_ejemplo(m, tipos, long)
+    elegidos = dict(elegidos or {})
+    cl = np.asarray(CLASES)
+    pred = E.as_pred(m.p_greedy)
+    usados, filas = set(), []
+    for k, cat in enumerate(CATEGORIAS_EJEMPLO):
+        if cat in elegidos:
+            i = int(elegidos[cat])
+        else:
+            cand = np.setdiff1d(np.flatnonzero(mascaras[cat]), list(usados))
+            if len(cand) == 0:
+                print(f"Sin candidatos para «{cat}»: se omite.")
+                continue
+            i = int(np.random.default_rng(seed + k).choice(cand))
+        usados.add(i)
+        filas.append({"categoría": cat, "fila": i, "texto": _recortar(m.X_va[i]), "real": cl[m.y_idx[i]],
+                      "predicho": cl[pred[i]], "confianza": float(m.p_greedy[i].max()),
+                      "tipo": etiqueta_tipo(tipos, long, i), "canal culpable": votos.iloc[i].idxmin(),
+                      "candidatos en la categoría": int(mascaras[cat].sum())})
+    return pd.DataFrame(filas).set_index("categoría")
+
+
+# ---------------------------------------------------------------- exportar al informe
+
+_LATEX_ESC = {"\\": r"\textbackslash{}", "{": r"\{", "}": r"\}", "~": r"\textasciitilde{}",
+              "^": r"\textasciicircum{}", "_": r"\_", "#": r"\#", "&": r"\&", "%": r"\%", "$": r"\$",
+              "…": r"\ldots{}"}
+
+
+def latex_escape(texto) -> str:
+    """Escapa los caracteres especiales de LaTeX y cambia emojis por [emoji] (pdflatex no los tiene)."""
+    import unicodedata
+
+    out = []
+    for ch in str(texto):
+        if ch in _LATEX_ESC:
+            out.append(_LATEX_ESC[ch])
+        elif ord(ch) > 0xFFFF or unicodedata.category(ch) in ("So", "Cs", "Co"):
+            if not out or out[-1] != "[emoji]":
+                out.append("[emoji]")
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+def a_latex(ej: pd.DataFrame, caption="Ejemplos de errores de greedy\\_kn (semilla de confirmación).",
+            label="tab:kn_ejemplos") -> str:
+    """Tabla tabularx (requiere \\usepackage{tabularx}) con las columnas del informe."""
+    cols = ["texto", "real", "predicho", "confianza", "tipo", "canal culpable"]
+    lineas = [r"\begin{table}[htbp]", r"\centering", r"\small",
+              rf"\caption{{{caption}}}", rf"\label{{{label}}}",
+              r"\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X l l r >{\raggedright\arraybackslash}p{2.4cm} l}", r"\hline",
+              r"Texto & Real & Predicho & Conf. & Tipo & Canal culpable \\", r"\hline"]
+    for _, r in ej[cols].iterrows():
+        texto = latex_escape(r["texto"]).replace("/", "/\\allowbreak{}")  # URLs largas pueden partirse
+        celdas = [texto, latex_escape(r["real"]), latex_escape(r["predicho"]),
+                  f"{r['confianza']:.2f}", latex_escape(r["tipo"]), latex_escape(r["canal culpable"])]
+        lineas.append(" & ".join(celdas) + r" \\")
+    lineas += [r"\hline", r"\end{tabularx}", r"\end{table}"]
+    return "\n".join(lineas) + "\n"
+
+
+def _a_json(o):
+    if isinstance(o, pd.DataFrame):
+        return {str(k): _a_json(v) for k, v in o.to_dict(orient="index").items()}
+    if isinstance(o, pd.Series):
+        return {str(k): _a_json(v) for k, v in o.to_dict().items()}
+    if isinstance(o, dict):
+        return {str(k): _a_json(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_a_json(v) for v in o]
+    if isinstance(o, np.ndarray):
+        return _a_json(o.tolist())
+    if isinstance(o, (np.bool_, bool)):
+        return bool(o)
+    if isinstance(o, (np.integer,)):
+        return int(o)
+    if isinstance(o, (np.floating, float)):
+        return None if np.isnan(o) else float(o)
+    return o
+
+
+def guardar_resumen(resumen: dict, ejemplos: pd.DataFrame, directorio=None, prefijo="03_kn") -> dict:
+    """Guarda ``{prefijo}_resumen.json``, ``{prefijo}_ejemplos.csv`` y ``{prefijo}_ejemplos.tex``."""
+    from tweetage import paths
+
+    d = Path(directorio) if directorio is not None else paths.work_dir() / "reports"
+    d.mkdir(parents=True, exist_ok=True)
+    rutas = {"json": d / f"{prefijo}_resumen.json", "csv": d / f"{prefijo}_ejemplos.csv",
+             "tex": d / f"{prefijo}_ejemplos.tex"}
+    rutas["json"].write_text(json.dumps(_a_json(resumen), indent=2, ensure_ascii=False), encoding="utf-8")
+    ejemplos.to_csv(rutas["csv"], encoding="utf-8")
+    rutas["tex"].write_text(a_latex(ejemplos), encoding="utf-8")
+    return rutas

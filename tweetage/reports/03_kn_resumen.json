@@ -1,0 +1,424 @@
+{
+  "semilla": 20261109,
+  "kaggle_publico": {
+    "greedy_kn": 0.61369
+  },
+  "f1_macro": {
+    "greedy_ent": 0.5937100612514742,
+    "greedy_kn": 0.5991546919082927,
+    "delta": 0.00544463065681855,
+    "ic95": [
+      0.0031216768481043488,
+      0.007813503878407155
+    ]
+  },
+  "accuracy": {
+    "greedy_ent": 0.5931437682699974,
+    "greedy_kn": 0.5990492219564768
+  },
+  "verificacion": {
+    "greedy_ent": {
+      "f1_macro": 0.5937100612514742,
+      "f1_guardado_en_spec": 0.5937100612514742,
+      "coincide": true
+    },
+    "greedy_kn": {
+      "f1_macro": 0.5991546919082927,
+      "f1_guardado_en_spec": 0.5991546919082927,
+      "coincide": true
+    }
+  },
+  "pesos_efectivos": {
+    "mezcla base (greedy_ent sin agregados)": 0.39899999999999997,
+    "shape7 (T=1.0)": 0.020999999999999998,
+    "kn_char7_cs (T=0.2)": 0.18,
+    "kn_char6 (T=1.0)": 0.4
+  },
+  "f1_por_clase": {
+    "greedy_ent": {
+      "13-17": 0.6544231293753978,
+      "18-24": 0.5002822353036045,
+      "25-34": 0.48238925199709515,
+      "35-49": 0.5551090700344432,
+      "50-64": 0.6571329519847461,
+      "65-xx": 0.7129237288135594,
+      "macro": 0.5937100612514744
+    },
+    "greedy_kn": {
+      "13-17": 0.6627433227704844,
+      "18-24": 0.5031528949308001,
+      "25-34": 0.4875239923224568,
+      "35-49": 0.5605470604995726,
+      "50-64": 0.6615898006331822,
+      "65-xx": 0.7193710802932604,
+      "macro": 0.5991546919082927
+    },
+    "Δ (kn − ent)": {
+      "13-17": 0.008320193395086606,
+      "18-24": 0.002870659627195571,
+      "25-34": 0.005134740325361653,
+      "35-49": 0.005437990465129383,
+      "50-64": 0.004456848648436096,
+      "65-xx": 0.006447351479700991,
+      "macro": 0.005444630656818383
+    }
+  },
+  "distribucion_predicciones": {
+    "real": {
+      "13-17": 5773,
+      "18-24": 5735,
+      "25-34": 5669,
+      "35-49": 5646,
+      "50-64": 5612,
+      "65-xx": 5432
+    },
+    "greedy_ent": {
+      "13-17": 5226,
+      "18-24": 6666,
+      "25-34": 5347,
+      "35-49": 4806,
+      "50-64": 5926,
+      "65-xx": 5896
+    },
+    "greedy_kn": {
+      "13-17": 5272,
+      "18-24": 6476,
+      "25-34": 5272,
+      "35-49": 4883,
+      "50-64": 6075,
+      "65-xx": 5889
+    },
+    "greedy_kn − real": {
+      "13-17": -501,
+      "18-24": 741,
+      "25-34": -397,
+      "35-49": -763,
+      "50-64": 463,
+      "65-xx": 457
+    },
+    "Δ (kn − ent)": {
+      "13-17": 46,
+      "18-24": -190,
+      "25-34": -75,
+      "35-49": 77,
+      "50-64": 149,
+      "65-xx": -7
+    }
+  },
+  "ordinal": {
+    "% de tweets mal clasificados": {
+      "greedy_ent": 40.685623173000266,
+      "greedy_kn": 40.09507780435232,
+      "Δ (kn − ent)": -0.5905453686479447
+    },
+    "% de errores en la clase vecina": {
+      "greedy_ent": 57.17396037448291,
+      "greedy_kn": 57.375359010236394,
+      "Δ (kn − ent)": 0.2013986357534847
+    },
+    "% de errores a distancia <= 2": {
+      "greedy_ent": 82.3064083024893,
+      "greedy_kn": 82.50239340157596,
+      "Δ (kn − ent)": 0.19598509908665562
+    },
+    "% de tweets con error >= 3": {
+      "greedy_ent": 7.198748043818466,
+      "greedy_kn": 7.0156789795376024,
+      "Δ (kn − ent)": -0.1830690642808639
+    },
+    "distancia media de los errores": {
+      "greedy_ent": 1.6881486319761956,
+      "greedy_kn": 1.6838500625966566,
+      "Δ (kn − ent)": -0.004298569379538986
+    }
+  },
+  "ordinal_concentracion_kn": {
+    "sin texto propio": {
+      "% en errores >= 3": 11.952861952861953,
+      "% en todos los tweets": 5.864115510674107,
+      "lift": 2.03830602093442,
+      "% del grupo con error >= 3": 14.300100704934543
+    },
+    "plantilla frecuente en train": {
+      "% en errores >= 3": 12.5,
+      "% en todos los tweets": 6.6938317536244725,
+      "lift": 1.8673908248786943,
+      "% del grupo con error >= 3": 13.101014556682841
+    },
+    "longitud 0-30": {
+      "% en errores >= 3": 16.035353535353536,
+      "% en todos los tweets": 9.850296749047747,
+      "lift": 1.6279056300414214,
+      "% del grupo con error >= 3": 11.420863309352518
+    },
+    "con URL": {
+      "% en errores >= 3": 49.494949494949495,
+      "% en todos los tweets": 40.49664865503292,
+      "lift": 1.2221986544261427,
+      "% del grupo con error >= 3": 8.574553408676632
+    },
+    "RT": {
+      "% en errores >= 3": 36.447811447811446,
+      "% en todos los tweets": 36.229958366551514,
+      "lift": 1.0060130646316463,
+      "% del grupo con error >= 3": 7.057864710676447
+    },
+    "con hashtag": {
+      "% en errores >= 3": 16.329966329966332,
+      "% en todos los tweets": 20.051967992441018,
+      "lift": 0.8143822260299953,
+      "% del grupo con error >= 3": 5.713444264467678
+    },
+    "respuesta (mención al inicio)": {
+      "% en errores >= 3": 10.606060606060606,
+      "% en todos los tweets": 20.06968435350046,
+      "lift": 0.5284617545173672,
+      "% del grupo con error >= 3": 3.7075180226570548
+    }
+  },
+  "por_tipo": {
+    "todos": {
+      "tweets": 33867.0,
+      "% de los tweets": 100.0,
+      "% de los errores (greedy_kn)": 100.0,
+      "accuracy greedy_ent": 0.5931437682699974,
+      "accuracy greedy_kn": 0.5990492219564768,
+      "F1 greedy_ent": 0.5937100612514742,
+      "F1 greedy_kn": 0.5991546919082927,
+      "Δ accuracy": 0.005905453686479434
+    },
+    "longitud 0-30": {
+      "tweets": 3336.0,
+      "% de los tweets": 9.850296749047747,
+      "% de los errores (greedy_kn)": 13.373591575226452,
+      "accuracy greedy_ent": 0.44814148681055155,
+      "accuracy greedy_kn": 0.4556354916067146,
+      "F1 greedy_ent": 0.425276066258623,
+      "F1 greedy_kn": 0.4318834161470139,
+      "Δ accuracy": 0.0074940047961630785
+    },
+    "sin texto propio": {
+      "tweets": 1986.0,
+      "% de los tweets": 5.864115510674107,
+      "% de los errores (greedy_kn)": 7.091832977391561,
+      "accuracy greedy_ent": 0.5060422960725075,
+      "accuracy greedy_kn": 0.5151057401812689,
+      "F1 greedy_ent": 0.48781451502650924,
+      "F1 greedy_kn": 0.49513477870333733,
+      "Δ accuracy": 0.009063444108761365
+    },
+    "plantilla frecuente en train": {
+      "tweets": 2267.0,
+      "% de los tweets": 6.6938317536244725,
+      "% de los errores (greedy_kn)": 7.055011414684439,
+      "accuracy greedy_ent": 0.565063961182179,
+      "accuracy greedy_kn": 0.5774150860167623,
+      "F1 greedy_ent": 0.5520593258765558,
+      "F1 greedy_kn": 0.56422567318477,
+      "Δ accuracy": 0.012351124834583227
+    },
+    "RT": {
+      "tweets": 12270.0,
+      "% de los tweets": 36.229958366551514,
+      "% de los errores (greedy_kn)": 32.56499005817807,
+      "accuracy greedy_ent": 0.6359413202933986,
+      "accuracy greedy_kn": 0.6396088019559902,
+      "F1 greedy_ent": 0.6134467419910862,
+      "F1 greedy_kn": 0.6170659034510678,
+      "Δ accuracy": 0.003667481662591676
+    },
+    "respuesta (mención al inicio)": {
+      "tweets": 6797.0,
+      "% de los tweets": 20.06968435350046,
+      "% de los errores (greedy_kn)": 14.861182708594153,
+      "accuracy greedy_ent": 0.6953067529792556,
+      "accuracy greedy_kn": 0.70310431072532,
+      "F1 greedy_ent": 0.7023661337885688,
+      "F1 greedy_kn": 0.7095122893284115,
+      "Δ accuracy": 0.0077975577460643875
+    },
+    "con hashtag": {
+      "tweets": 6791.0,
+      "% de los tweets": 20.051967992441018,
+      "% de los errores (greedy_kn)": 15.067383459754032,
+      "accuracy greedy_ent": 0.6926814902076277,
+      "accuracy greedy_kn": 0.6987188926520395,
+      "F1 greedy_ent": 0.6845593648381488,
+      "F1 greedy_kn": 0.6909225204995958,
+      "Δ accuracy": 0.006037402444411755
+    },
+    "con URL": {
+      "tweets": 13715.0,
+      "% de los tweets": 40.49664865503292,
+      "% de los errores (greedy_kn)": 39.18550703291848,
+      "accuracy greedy_ent": 0.6051768137076194,
+      "accuracy greedy_kn": 0.612030623405031,
+      "F1 greedy_ent": 0.5912510986801053,
+      "F1 greedy_kn": 0.598372110370065,
+      "Δ accuracy": 0.006853809697411561
+    }
+  },
+  "confianza": {
+    "greedy_ent": {
+      "accuracy por quintil": {
+        "Q1 (más dudoso)": 0.3153232949512843,
+        "Q2": 0.38284364388011216,
+        "Q3": 0.5321128008268123,
+        "Q4": 0.7785324080909494,
+        "Q5 (más seguro)": 0.9568940064954237
+      },
+      "% de errores en Q1+Q2": 63.995935844400904,
+      "ECE": 0.1151992033498105
+    },
+    "greedy_kn": {
+      "accuracy por quintil": {
+        "Q1 (más dudoso)": 0.31325656923531153,
+        "Q2": 0.3881588660859294,
+        "Q3": 0.5411191495644471,
+        "Q4": 0.7896057876864019,
+        "Q5 (más seguro)": 0.9630941836433422
+      },
+      "% de errores en Q1+Q2": 64.77649311436777,
+      "ECE": 0.2483357573368701
+    }
+  },
+  "cambios": {
+    "corregida": 974,
+    "estropeada": 774,
+    "ambos fallan (cambia la clase)": 1164,
+    "ambos fallan (igual)": 11641,
+    "ambos aciertan": 19314
+  },
+  "cambios_por_clase": {
+    "real 13-17": {
+      "tweets": 5773.0,
+      "corregidas": 179.0,
+      "estropeadas": 118.0,
+      "neto": 61.0,
+      "neto por cada 1000 tweets": 10.566429932444137
+    },
+    "real 18-24": {
+      "tweets": 5735.0,
+      "corregidas": 183.0,
+      "estropeadas": 213.0,
+      "neto": -30.0,
+      "neto por cada 1000 tweets": -5.231037489102005
+    },
+    "real 25-34": {
+      "tweets": 5669.0,
+      "corregidas": 178.0,
+      "estropeadas": 168.0,
+      "neto": 10.0,
+      "neto por cada 1000 tweets": 1.763979537837361
+    },
+    "real 35-49": {
+      "tweets": 5646.0,
+      "corregidas": 172.0,
+      "estropeadas": 122.0,
+      "neto": 50.0,
+      "neto por cada 1000 tweets": 8.855827134254339
+    },
+    "real 50-64": {
+      "tweets": 5612.0,
+      "corregidas": 146.0,
+      "estropeadas": 71.0,
+      "neto": 75.0,
+      "neto por cada 1000 tweets": 13.364219529579472
+    },
+    "real 65-xx": {
+      "tweets": 5432.0,
+      "corregidas": 116.0,
+      "estropeadas": 82.0,
+      "neto": 34.0,
+      "neto por cada 1000 tweets": 6.25920471281296
+    }
+  },
+  "cambios_por_tipo": {
+    "todos": {
+      "tweets": 33867.0,
+      "corregidas": 974.0,
+      "estropeadas": 774.0,
+      "neto": 200.0,
+      "neto por cada 1000 tweets": 5.905453686479464
+    },
+    "longitud 0-30": {
+      "tweets": 3336.0,
+      "corregidas": 184.0,
+      "estropeadas": 159.0,
+      "neto": 25.0,
+      "neto por cada 1000 tweets": 7.494004796163069
+    },
+    "sin texto propio": {
+      "tweets": 1986.0,
+      "corregidas": 87.0,
+      "estropeadas": 69.0,
+      "neto": 18.0,
+      "neto por cada 1000 tweets": 9.06344410876133
+    },
+    "plantilla frecuente en train": {
+      "tweets": 2267.0,
+      "corregidas": 95.0,
+      "estropeadas": 67.0,
+      "neto": 28.0,
+      "neto por cada 1000 tweets": 12.35112483458315
+    },
+    "RT": {
+      "tweets": 12270.0,
+      "corregidas": 205.0,
+      "estropeadas": 160.0,
+      "neto": 45.0,
+      "neto por cada 1000 tweets": 3.667481662591687
+    },
+    "respuesta (mención al inicio)": {
+      "tweets": 6797.0,
+      "corregidas": 162.0,
+      "estropeadas": 109.0,
+      "neto": 53.0,
+      "neto por cada 1000 tweets": 7.79755774606444
+    },
+    "con hashtag": {
+      "tweets": 6791.0,
+      "corregidas": 133.0,
+      "estropeadas": 92.0,
+      "neto": 41.0,
+      "neto por cada 1000 tweets": 6.037402444411722
+    },
+    "con URL": {
+      "tweets": 13715.0,
+      "corregidas": 388.0,
+      "estropeadas": 294.0,
+      "neto": 94.0,
+      "neto por cada 1000 tweets": 6.853809697411593
+    }
+  },
+  "ablacion_kn": {
+    "quitar kn_char6 (agregado)": {
+      "F1 sin": 0.5975292219377263,
+      "ΔF1 (aporte)": 0.001625469970566451,
+      "ic95 bajo": 0.000548992984703875,
+      "ic95 alto": 0.0027255161639586577,
+      "% predicciones que cambian": 1.739156110668202
+    },
+    "kn_char7_cs → char_seq4 (agregado)": {
+      "F1 sin": 0.5965693530757027,
+      "ΔF1 (aporte)": 0.002585338832590045,
+      "ic95 bajo": 0.00026291407698518786,
+      "ic95 alto": 0.0049346859018299105,
+      "% predicciones que cambian": 6.906428086337733
+    },
+    "kn_char6_cs → char6_cs (reemplazo)": {
+      "F1 sin": 0.5955125167050478,
+      "ΔF1 (aporte)": 0.003642175203244946,
+      "ic95 bajo": 0.0016166114133206676,
+      "ic95 alto": 0.0057750063045697575,
+      "% predicciones que cambian": 6.49304632828417
+    },
+    "revertir todo (= greedy_ent)": {
+      "F1 sin": 0.5937100612514742,
+      "ΔF1 (aporte)": 0.00544463065681855,
+      "ic95 bajo": 0.0031216768481043488,
+      "ic95 alto": 0.007813503878407155,
+      "% predicciones que cambian": 8.5983405675141
+    }
+  }
+}

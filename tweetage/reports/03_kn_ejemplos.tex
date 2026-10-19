@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\small
+\caption{Ejemplos de errores de greedy\_kn (semilla de confirmación).}
+\label{tab:kn_ejemplos}
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X l l r >{\raggedright\arraybackslash}p{2.4cm} l}
+\hline
+Texto & Real & Predicho & Conf. & Tipo & Canal culpable \\
+\hline
+@LaJarradeCuley eso es bueno o malo & 25-34 & 18-24 & 0.24 & respuesta, 31-60 car. & kn\_char7\_cs \\
+RT @OrgulloANT: Esta es la nueva imagen de nuestros vehiculos para el 2015 http:/\allowbreak{}/\allowbreak{}t.co/\allowbreak{}JiiLqeDLB5 & 35-49 & 65-xx & 0.44 & RT, URL, 91-120 car. & word\_seq3\_ent5\_tt \\
+RT @cmejia26: \#NoMasCuadrangulares & 18-24 & 35-49 & 0.38 & RT, hashtag, sin texto, plantilla, 31-60 car. & kn\_char7\_cs \\
+RT @zinxsoficial: \#EnCu4troSiempreEsMejor \#HoroscopoZino \#Cancer Parte I, II, III \&amp; IV. https:/\allowbreak{}/\allowbreak{}t.co/\allowbreak{}YahexloRm1 & 13-17 & 18-24 & 0.63 & RT, URL, hashtag, 91-120 car. & kn\_char7\_cs \\
+Carlos Arturoooooooooooooooooo Baccaaaaaaaaaaaaaaaaaaaaa & 25-34 & 65-xx & 0.19 & 31-60 car. & word\_seq3\_ent5\_tt \\
+Changing hair color :D & 25-34 & 18-24 & 0.37 & 0-30 car. & kn\_char7\_cs \\
+\hline
+\end{tabularx}
+\end{table}

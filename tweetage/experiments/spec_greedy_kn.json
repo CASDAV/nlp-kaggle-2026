@@ -1,0 +1,54 @@
+{
+  "flags": {
+    "unescape": false,
+    "tweet_tok": true,
+    "clean": false,
+    "template": false
+  },
+  "channels": [
+    "word1",
+    "char4",
+    "char5",
+    "char6",
+    "mentions",
+    "hashtags",
+    "position",
+    "mention_pos",
+    "char_seq2",
+    "word_seq3"
+  ],
+  "swaps": {
+    "char4": "char4_cs",
+    "char5": "char5_cs",
+    "char6": "kn_char6_cs",
+    "word_seq3": "word_seq3_ent5_tt"
+  },
+  "blend": {
+    "kind": "pipeline_v1"
+  },
+  "adds": [
+    {
+      "name": "shape7",
+      "temperature": 1.0,
+      "weight": 0.05
+    },
+    {
+      "name": "kn_char7_cs",
+      "temperature": 0.2,
+      "weight": 0.3
+    },
+    {
+      "name": "kn_char6",
+      "temperature": 1.0,
+      "weight": 0.4
+    }
+  ],
+  "specialist": null,
+  "bias": null,
+  "experimento": "v3_greedy_kn",
+  "f1_confirmacion": 0.5991546919082927,
+  "delta_confirmacion": 0.012284270378119078,
+  "swap_temps": {
+    "char6": 0.2
+  }
+}

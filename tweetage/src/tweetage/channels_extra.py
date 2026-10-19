@@ -129,3 +129,21 @@ def cached_probs(names, X_train, y_train, X_eval, tag, channels=CHANNELS_V2, n_j
             np.save(paths[n], prob)
         out.update(new)
     return {n: out[n] for n in names}
+
+# ---------------------------------------------------------------- tanda v3: Kneser-Ney y NB binarizado
+from tweetage import models_kn as KN  # noqa: E402
+
+CHANNELS_V2.update({
+    "kn_char5_cs": (KN.KNSeqLM, {"unit": "char", "order": 5, "case_sensitive": True}, 1.0),
+    "kn_char6_cs": (KN.KNSeqLM, {"unit": "char", "order": 6, "case_sensitive": True}, 1.0),
+    "kn_char7_cs": (KN.KNSeqLM, {"unit": "char", "order": 7, "case_sensitive": True}, 1.0),
+    "kn_char6": (KN.KNSeqLM, {"unit": "char", "order": 6, "case_sensitive": False}, 1.0),
+    "kn_word3_ent5_tt": (KN.KNSeqLM, {"unit": "word", "order": 3, "min_count": 3, "entity_min_count": 5, "tokenizer": "tweet"}, 1.0),
+    "kn_word4_ent5_tt": (KN.KNSeqLM, {"unit": "word", "order": 4, "min_count": 3, "entity_min_count": 5, "tokenizer": "tweet"}, 1.0),
+    "nbbin_c5_cs": (KN.BinaryNgramLM, {"orders": (5,), "alpha": 0.1}, 1.0),
+    "nbbin_c456_cs": (KN.BinaryNgramLM, {"orders": (4, 5, 6), "alpha": 0.1}, 1.0),
+    "nbbin_c3456_cs": (KN.BinaryNgramLM, {"orders": (3, 4, 5, 6), "alpha": 0.05}, 1.0),
+    "nbbin_c4567_cs": (KN.BinaryNgramLM, {"orders": (4, 5, 6, 7), "alpha": 0.05}, 1.0),
+})
+KN_NAMES = ["kn_char5_cs", "kn_char6_cs", "kn_char7_cs", "kn_char6", "kn_word3_ent5_tt", "kn_word4_ent5_tt"]
+NBBIN_NAMES = ["nbbin_c5_cs", "nbbin_c456_cs", "nbbin_c3456_cs", "nbbin_c4567_cs"]

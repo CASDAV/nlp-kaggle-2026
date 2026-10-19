@@ -107,8 +107,9 @@ def predict_spec(spec, probs, masks, proba=False):
     from tweetage import pipeline as P
 
     p = dict(probs)
+    temps = spec.get("swap_temps") or {}  # opcional (v3): temperatura del canal que entra
     for old, new in (spec.get("swaps") or {}).items():
-        p[old] = probs[new]
+        p[old] = B.with_temperature(probs[new], temps[old]) if old in temps else probs[new]
     if spec["blend"]["kind"] == "pipeline_v1":
         out = P.blend(p, masks["mention"])
     else:
